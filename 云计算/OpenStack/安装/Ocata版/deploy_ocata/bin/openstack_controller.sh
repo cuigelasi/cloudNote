@@ -29,10 +29,11 @@ optional arguments:
     --check
     --install           Install the docker
 e.g:
+    --- 执行脚本前请检查controller_ip ---
     --- 检查openstack环境 ---
     sh $0 --check
     --- 安装openstack实例 ---
-    sh $0 --install
+    sh $0 --install <组件名>
 EOF
 }
 
@@ -102,7 +103,7 @@ openstack_install(){
         echo "allow 172.16.0.0/16" >> /etc/chrony.conf
         systemctl restart chronyd.service
     elif [ "$1" = "rpm" ];then
-        ## 安装openstack rpm 
+        ## 安装openstack rpm
         yum -y install centos-release-openstack-ocata
         yum -y upgrade
         yum -y install python-openstackclient
@@ -116,6 +117,11 @@ openstack_install(){
         crudini --set /etc/my.cnf.d/openstack.cnf mysqld max_connections 4096
         crudini --set /etc/my.cnf.d/openstack.cnf mysqld collation-server utf8_general_ci
         crudini --set /etc/my.cnf.d/openstack.cnf mysqld character-set-server utf8
+        crudini --set /etc/systemd/system.conf Manager DefaultLimitNOFILE 100000
+        crudini --set /etc/systemd/system.conf Manager DefaultLimitNPROC 100000
+        crudini --set /usr/lib/systemd/system/mariadb.service Service LimitNOFILE 50000
+        crudini --set /usr/lib/systemd/system/mariadb.service Service LimitNPROC 50000
+        systemctl daemon-reload
         systemctl enable mariadb.service
         systemctl start mariadb.service
         sleep 3
@@ -261,7 +267,7 @@ openstack_install(){
         yum -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-linuxbridge ebtables
         crudini --set /etc/neutron/neutron.conf database connection "mysql+pymysql://neutron:$NEUTRON_DBPASS@$controller_ip/neutron"
         crudini --set /etc/neutron/neutron.conf DEFAULT core_plugin ml2
-        crudini --set /etc/neutron/neutron.conf DEFAULT service_plugins 
+        crudini --set /etc/neutron/neutron.conf DEFAULT service_plugins
         crudini --set /etc/neutron/neutron.conf DEFAULT allow_overlapping_ips true
         crudini --set /etc/neutron/neutron.conf DEFAULT transport_url "rabbit://openstack:$RABBIT_PASS@$controller_ip"
         crudini --set /etc/neutron/neutron.conf DEFAULT auth_strategy keystone
@@ -286,7 +292,7 @@ openstack_install(){
         crudini --set /etc/neutron/neutron.conf nova password $NOVA_DBPASS
         crudini --set /etc/neutron/neutron.conf oslo_concurrency lock_path "/var/lib/neutron/tmp"
         crudini --set /etc/neutron/plugins/ml2/ml2_conf.ini ml2 type_drivers "flat,vlan"
-        crudini --set /etc/neutron/plugins/ml2/ml2_conf.ini ml2 tenant_network_types 
+        crudini --set /etc/neutron/plugins/ml2/ml2_conf.ini ml2 tenant_network_types
         crudini --set /etc/neutron/plugins/ml2/ml2_conf.ini ml2 mechanism_drivers "linuxbridge"
         crudini --set /etc/neutron/plugins/ml2/ml2_conf.ini ml2 extension_drivers port_security
         crudini --set /etc/neutron/plugins/ml2/ml2_conf.ini ml2_type_flat flat_networks provider

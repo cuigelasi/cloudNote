@@ -29,10 +29,11 @@ optional arguments:
     --check
     --install           Install the docker
 e.g:
+    --- 执行脚本前请检查compute_ip ---
     --- 检查openstack环境 ---
     sh $0 --check
     --- 安装openstack实例 ---
-    sh $0 --install
+    sh $0 --install <模块名>
 EOF
 }
 
@@ -96,7 +97,7 @@ openstack_install(){
         #echo "allow 172.16.0.0/16" >> /etc/chrony.conf
         systemctl restart chronyd.service
     elif [ "$1" = "rpm" ];then
-        ## 安装openstack rpm 
+        ## 安装openstack rpm
         yum -y install centos-release-openstack-ocata
         yum -y upgrade
         yum -y install python-openstackclient
